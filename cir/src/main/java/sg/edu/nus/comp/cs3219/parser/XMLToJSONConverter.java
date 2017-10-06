@@ -10,40 +10,20 @@ import org.json.XML;
 import com.jcabi.xml.XMLDocument;
 
 public class XMLToJSONConverter {
-  public static String XMLAssetBasePath = "/assets/XML";
-
-  private static XMLToJSONConverter instance = null;
   private int PRETTY_PRINT_INDENT_FACTOR = 4;
 
   protected XMLToJSONConverter() {
     // For instantiation
   }
 
-  public static XMLToJSONConverter getInstance() {
-    if(instance == null) {
-      instance = new XMLToJSONConverter();
-   }
-   return instance;
+  protected String convertToJsonString(File xmlFile) throws IOException {
+    String xmlString = getXMLFileContentsAsString(xmlFile);
+    String jsonString = getJSONString(xmlString);
+    return jsonString;
   }
 
-  public String convertToJsonString(File xmlFile) {
-    try {
-      String xmlString = getXMLFileContentsAsString(xmlFile);
-      String jsonString = getJSONString(xmlString);
-      return jsonString;
-    } catch (IOException e) {
-      System.err.println(e);
-    }
-    return null;
-  }
-
-  public String convertToJsonString(String xmlString) {
-    try {
-      return getJSONString(xmlString);
-    } catch (JSONException e) {
-      System.err.println(e);
-    }
-    return null;
+  protected String convertToJsonString(String xmlString) throws JSONException {
+    return getJSONString(xmlString);
   }
 
   private String getXMLFileContentsAsString(File file) throws IOException {
