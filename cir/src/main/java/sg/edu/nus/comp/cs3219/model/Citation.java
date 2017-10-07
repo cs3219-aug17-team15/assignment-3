@@ -42,6 +42,10 @@ public class Citation {
     return authors != null && authors.author != null;
   }
 
+  public boolean hasBookTitle() {
+    return booktitle != null && !booktitle.isEmpty();
+  }
+
   public boolean hasDate() {
     return date != null && !date.isEmpty();
   }

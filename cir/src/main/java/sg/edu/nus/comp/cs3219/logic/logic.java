@@ -32,7 +32,7 @@ public class logic {
     File baseDir = storage.getAssetBaseDir();
     int count = 0;
     for (File file : baseDir.listFiles()) {
-//      System.out.println(file.toString());
+      // System.out.println(file.toString());
       if (file.isDirectory()) {
         count += getCitationsInDir(file).size();
       } else {
@@ -52,13 +52,15 @@ public class logic {
   // Q4: How many author are mentioned in the citations in all datasets put together?
   public int getNumAuthorReferencePaper() {
     List<Citation> citations = getAllCitations();
-    return citations.stream().map(cit -> cit.getAuthors()).flatMap(List::stream).collect(Collectors.toList()).size();
+    return citations.stream().map(cit -> cit.getAuthors()).flatMap(List::stream)
+        .collect(Collectors.toList()).size();
   }
 
   // Q5: What is the range of the years of the cited documents in all datasets put together?
   public int getYearRangeReferencePaper() {
     List<Citation> citations = getAllCitations();
-    Set<Integer> yearSet = citations.stream().filter(cit -> cit.hasDate()).map(cite -> cite.getDate()).collect(Collectors.toSet());
+    Set<Integer> yearSet = citations.stream().filter(cit -> cit.hasDate())
+        .map(cite -> cite.getDate()).collect(Collectors.toSet());
     return yearSet.size();
   }
 
@@ -67,13 +69,16 @@ public class logic {
   // Answer Format: <year> <integer>
   public Vector<String> getNumReferencePaper(String conference, int from, int to) {
     Vector<String> result = new Vector<String>();
+    File conferenceDir = storage.getConferenceDir(conference);
+    List<Citation> citations = getCitationsInDir(conferenceDir);
     for (int i = from; i <= to; i++) {
-      result.add(i + " " + getNumReferencePaper(conference, i));
+      result.add(i + " " + getCitationEqualDate(citations, i).size());
     }
     return result;
   }
 
   public int getNumReferencePaper(String conference, int year) {
+    File dir = storage.getConferenceWithYearDir(conference, year);
     return 0;
   }
 
@@ -147,6 +152,16 @@ public class logic {
     return result;
   }
 
+  //  Helpers
+  private List<Citation> filterCitationsWithDate(List<Citation> citations) {
+    return citations.stream().filter(cit -> cit.hasDate()).collect(Collectors.toList());
+  }
+
+  private List<Citation> getCitationEqualDate(List<Citation> citations, int date) {
+    return filterCitationsWithDate(citations).stream().filter(cit -> cit.getDate() == date).collect(Collectors.toList());
+  }
+
+  //  File getters
   private List<Citation> getAllCitations() {
     List<Citation> citations = new ArrayList<Citation>();
     for (File file : storage.getAssetBaseDir().listFiles()) {
@@ -184,11 +199,12 @@ public class logic {
     return doc.getValidCitations();
   }
 
+  // Misc
   private void printSet(Set<?> set) {
     Iterator<?> itr = set.iterator();
 
     while (itr.hasNext()) {
-        System.out.println(itr.next());
+      System.out.println(itr.next());
     }
   }
 }

@@ -9,43 +9,64 @@ import java.util.List;
 public class Storage {
   // to be changed to unparsed and parsed only
   public static final String ASSET_BASE_PATH_XML = "/assets/XML";
-//  public static final String ASSET_BASE_PATH_JSON = "/assets/JSON";
+  // public static final String ASSET_BASE_PATH_JSON = "/assets/JSON";
   public static final String ASSET_BASE_PATH_PARSED = "/assets/parsed";
 
   private File xmlDir;
-//  private File jsonDir;
+  // private File jsonDir;
 
   public Storage() {
     Path currPath = Paths.get(".");
     Path xmlFilePath = Paths.get(currPath.toString(), Storage.ASSET_BASE_PATH_XML);
-//    Path jsonFilePath = Paths.get(currPath.toString(), Storage.ASSET_BASE_PATH_JSON);
+    // Path jsonFilePath = Paths.get(currPath.toString(), Storage.ASSET_BASE_PATH_JSON);
 
     xmlDir = new File(xmlFilePath.toString());
     if (!xmlDir.exists()) {
       xmlDir.mkdirs();
     }
-//
-//    jsonDir = new File(jsonFilePath.toString());
-//    if (!jsonDir.exists()) {
-//      jsonDir.mkdirs();
-//    }
+    //
+    // jsonDir = new File(jsonFilePath.toString());
+    // if (!jsonDir.exists()) {
+    // jsonDir.mkdirs();
+    // }
   }
 
   public File getAssetBaseDir() {
     return xmlDir;
   }
 
+  // used to get conference base or specific conference e.g. D12
   public File getConferenceDir(String conference) {
-    return new File(Paths.get(xmlDir.getPath().toString(), conference).toString());
+    File dir;
+    if (conference.matches(".*\\d+.*")) {
+      dir = new File(Paths.get(xmlDir.getPath().toString(),
+          conference.toUpperCase().substring(0, 1), conference).toString());
+    } else {
+      dir = new File(Paths.get(xmlDir.getPath().toString(), conference.toUpperCase()).toString());
+    }
+    if (!dir.exists()) {
+      dir.mkdirs();
+    }
+    return dir;
   }
 
+  // used when conference is only letter, e.g. D
   public File getConferenceWithYearDir(String conference, int year) {
-    String folder = conference + Integer.toString(year);
-    if (year > 2000) {
-      folder = conference + Integer.toString(year - 2000);
+    if (conference.length() > 1) {
+      return getConferenceDir(conference);
     }
-    Path path = Paths.get(xmlDir.getPath().toString(), conference, folder);
-    return new File(path.toString());
+
+    String yrString = Integer.toString(year);
+    if (yrString.length() == 4) {
+      yrString = yrString.substring(2);
+    }
+    String folder = conference.toUpperCase() + yrString;
+    Path path = Paths.get(xmlDir.getPath().toString(), conference.toUpperCase(), folder);
+    File dir = new File(path.toString());
+    if (!dir.exists()) {
+      dir.mkdirs();
+    }
+    return dir;
   }
 
   public List<File> getConferenceThroughYearsDir(String conference, int from, int to) {
@@ -57,15 +78,12 @@ public class Storage {
     return res;
   }
 
-  // workaround until db is set up
-  public void getBasePaper() {
-
-  }
-
   public int getDocumentCount() {
     Path currPath = Paths.get(".");
-    File xmlFiles = new File(Paths.get(currPath.toString(), Storage.ASSET_BASE_PATH_XML).toString());
-//    File jsonFiles = new File(Paths.get(currPath.toString(), Storage.ASSET_BASE_PATH_JSON).toString());
+    File xmlFiles =
+        new File(Paths.get(currPath.toString(), Storage.ASSET_BASE_PATH_XML).toString());
+    // File jsonFiles = new File(Paths.get(currPath.toString(),
+    // Storage.ASSET_BASE_PATH_JSON).toString());
     return countFilesInDirectory(xmlFiles); // + countFilesInDirectory(jsonFiles);
   }
 
