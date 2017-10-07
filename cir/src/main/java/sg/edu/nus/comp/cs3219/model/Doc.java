@@ -17,4 +17,20 @@ public class Doc {
     this.label = label;
     this.citationList = citationList;
   }
+
+  public List<Citation> getValidCitations() {
+    return this.citationList.stream().filter(cit -> cit.isValid()).collect(Collectors.toList());
+  }
+
+  public int getValidCitationCount() {
+    return Math.toIntExact(this.citationList.stream().filter(cit -> cit.isValid()).count());
+  }
+
+  public List<String> getCitationAuthors() {
+    return this.citationList.stream().map(cit -> cit.getAuthors()).flatMap(List::stream).collect(Collectors.toList());
+  }
+
+  public List<String> getTitle() {
+    return this.label.getTitle();
+  }
 }
