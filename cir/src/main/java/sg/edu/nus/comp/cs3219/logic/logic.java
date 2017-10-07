@@ -1,8 +1,15 @@
 package sg.edu.nus.comp.cs3219.logic;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
+import sg.edu.nus.comp.cs3219.model.Citation;
+import sg.edu.nus.comp.cs3219.model.Doc;
 import sg.edu.nus.comp.cs3219.parser.Parser;
 import sg.edu.nus.comp.cs3219.storage.Storage;
 
@@ -23,23 +30,36 @@ public class logic {
   // Q2: How many citations are there in all datasets put together?
   public int getNumReferencePaper() {
     File baseDir = storage.getAssetBaseDir();
-
-    return 0;
+    int count = 0;
+    for (File file : baseDir.listFiles()) {
+//      System.out.println(file.toString());
+      if (file.isDirectory()) {
+        count += getCitationsInDir(file).size();
+      } else {
+        count += getCitationInFile(file).size();
+      }
+    }
+    return count;
   }
 
   // Q3: How many unique citations are there in all datasets put together?
   public int getNumUniqueReferencePaper() {
-    return 0;
+    List<Citation> citations = getAllCitations();
+    int unique = citations.stream().map(cit -> cit.getTitle()).collect(Collectors.toSet()).size();
+    return unique;
   }
 
   // Q4: How many author are mentioned in the citations in all datasets put together?
   public int getNumAuthorReferencePaper() {
-    return 0;
+    List<Citation> citations = getAllCitations();
+    return citations.stream().map(cit -> cit.getAuthors()).flatMap(List::stream).collect(Collectors.toList()).size();
   }
 
   // Q5: What is the range of the years of the cited documents in all datasets put together?
   public int getYearRangeReferencePaper() {
-    return 0;
+    List<Citation> citations = getAllCitations();
+    Set<Integer> yearSet = citations.stream().filter(cit -> cit.hasDate()).map(cite -> cite.getDate()).collect(Collectors.toSet());
+    return yearSet.size();
   }
 
   // Q6: For the conference D12 give number of cited documents published in each of the years 2000
@@ -127,4 +147,48 @@ public class logic {
     return result;
   }
 
+  private List<Citation> getAllCitations() {
+    List<Citation> citations = new ArrayList<Citation>();
+    for (File file : storage.getAssetBaseDir().listFiles()) {
+      if (file.isDirectory()) {
+        citations.addAll(getCitationsInDir(file));
+      } else {
+        citations.addAll(getCitationInFile(file));
+      }
+    }
+    return citations;
+  }
+
+  private List<Citation> getCitationsInDir(File dir) {
+    List<Citation> list = new ArrayList<>();
+    Doc doc;
+    for (File file : dir.listFiles()) {
+      if (file.isDirectory()) {
+        list.addAll(getCitationsInDir(file));
+      } else {
+        doc = parser.parseFile(file.toString());
+        if (doc == null) {
+          continue;
+        }
+        list.addAll(doc.getValidCitations());
+      }
+    }
+    return list;
+  }
+
+  private List<Citation> getCitationInFile(File file) {
+    Doc doc = parser.parseFile(file.toString());
+    if (doc == null) {
+      return new ArrayList<>();
+    }
+    return doc.getValidCitations();
+  }
+
+  private void printSet(Set<?> set) {
+    Iterator<?> itr = set.iterator();
+
+    while (itr.hasNext()) {
+        System.out.println(itr.next());
+    }
+  }
 }

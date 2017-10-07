@@ -1,5 +1,6 @@
 package sg.edu.nus.comp.cs3219.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Citation {
@@ -30,10 +31,21 @@ public class Citation {
   }
 
   public List<String> getAuthors() {
+    if (authors == null || authors.author == null) {
+      return new ArrayList<String>();
+    }
     return authors.author;
   }
 
   // Boolean
+  public boolean hasAuthors() {
+    return authors != null && authors.author != null;
+  }
+
+  public boolean hasDate() {
+    return date != null && !date.isEmpty();
+  }
+
   public boolean isValid() {
     return valid;
   }

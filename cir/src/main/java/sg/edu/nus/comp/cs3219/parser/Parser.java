@@ -5,11 +5,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
@@ -24,7 +26,7 @@ public class Parser {
   private Gson gson;
 
   private static final int POS_LABEL = 0;
-//  private static final int POS_HEAD = 1;
+  // private static final int POS_HEAD = 1;
   private static final int POS_CIT = 2;
 
   private static final String TOKEN_ALGORITHM = "algorithm";
@@ -39,11 +41,10 @@ public class Parser {
 
     Type jsonContentListType = new TypeToken<List<JSONContent>>() {}.getType();
     this.gson =
-        new GsonBuilder()
-            .registerTypeAdapter(jsonContentListType, new ElementListDeserializer())
-            .registerTypeAdapter(new TypeToken<List<String>>() {}.getType(), new CitationAuthorDeserializer())
-            .setPrettyPrinting()
-            .create();
+        new GsonBuilder().registerTypeAdapter(jsonContentListType, new ElementListDeserializer())
+            .registerTypeAdapter(new TypeToken<List<String>>() {}.getType(),
+                new CitationAuthorDeserializer())
+            .setPrettyPrinting().create();
   }
 
   public Doc parseFile(String filePath) {
@@ -62,6 +63,13 @@ public class Parser {
     } catch (IOException e) {
       System.err.println("IO error on probing content type of file at: " + filePath);
       e.printStackTrace();
+    } catch (IllegalArgumentException e) {
+      System.err.println("IllegalArgumentException at :" + filePath);
+      // System.err.println(e.getLocalizedMessage());
+      return null;
+    } catch (Exception e) {
+      System.err.println("Error occurred at: " + filePath);
+      // e.printStackTrace();
     }
     return null;
   }
@@ -85,7 +93,7 @@ public class Parser {
     // convert jsonobject to our own class with fields we want
     JsonArray jsonArray = getMainData(jsonObject);
     Label labelData = getLabel(jsonArray);
-//    Head headData = getHead(jsonArray);
+    // Head headData = getHead(jsonArray);
     List<Citation> citData = getCitations(jsonArray);
 
     return new Doc(labelData, citData);
@@ -104,13 +112,34 @@ public class Parser {
     return gson.fromJson(data, Label.class);
   }
 
-//  private Head getHead(JsonArray jsonArray) {
-//    JsonObject data = getData(POS_HEAD, jsonArray);
-//    return gson.fromJson(data, Head.class);
-//  }
+  // private Head getHead(JsonArray jsonArray) {
+  // JsonObject data = getData(POS_HEAD, jsonArray);
+  // return gson.fromJson(data, Head.class);
+  // }
 
   private List<Citation> getCitations(JsonArray jsonArray) {
-    JsonArray data = jsonArray.get(POS_CIT).getAsJsonObject().getAsJsonObject(TOKEN_CITATIONS).getAsJsonArray(TOKEN_CITATION);
-    return gson.fromJson(data, new TypeToken<List<Citation>>(){}.getType());
+    int pos = POS_CIT;
+    if (jsonArray.size() == POS_CIT) {
+      // for cases where POS_HEAD is missing
+      pos--;
+    }
+    JsonObject citationObject = jsonArray.get(pos).getAsJsonObject();
+    if (!citationObject.has(TOKEN_CITATIONS)
+        || citationObject.get(TOKEN_CITATIONS).isJsonPrimitive()) {
+      return new ArrayList<>();
+    }
+
+    JsonObject citations = citationObject.getAsJsonObject(TOKEN_CITATIONS);
+    if (!citations.has(TOKEN_CITATION) || citations.get(TOKEN_CITATION).isJsonNull()
+        || citations.get(TOKEN_CITATION).isJsonPrimitive()) {
+      return new ArrayList<Citation>();
+    } else if (citations.get(TOKEN_CITATION).isJsonArray()) {
+      return gson.fromJson(citations.getAsJsonArray(TOKEN_CITATION),
+          new TypeToken<List<Citation>>() {}.getType());
+    }
+    JsonObject data = citations.getAsJsonObject(TOKEN_CITATION);
+    JsonArray array = new JsonArray();
+    array.add(data);
+    return gson.fromJson(array, new TypeToken<List<Citation>>() {}.getType());
   }
 }

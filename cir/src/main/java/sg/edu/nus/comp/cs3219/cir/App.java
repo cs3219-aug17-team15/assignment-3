@@ -8,15 +8,15 @@ public class App {
   public static void main(String[] args) throws Exception {
     logic l = new logic();
     System.out.print("Q1: ");
-    System.out.println(l.getNumBasePaper());
-    System.out.print("Q2: ");
-    System.out.println(l.getNumReferencePaper());
-    System.out.print("Q3: ");
-    System.out.println(l.getNumUniqueReferencePaper());
-    System.out.print("Q4: ");
-    System.out.println(l.getNumAuthorReferencePaper());
-    System.out.print("Q5: ");
-    System.out.println(l.getYearRangeReferencePaper());
+    System.out.println(l.getNumBasePaper()); // 1961
+//    System.out.print("Q2: ");
+//    System.out.println(l.getNumReferencePaper()); // 46801
+//    System.out.print("Q3: ");
+//    System.out.println(l.getNumUniqueReferencePaper()); // 29118
+//    System.out.print("Q4: ");
+//    System.out.println(l.getNumAuthorReferencePaper()); // 128872
+//    System.out.print("Q5: ");
+//    System.out.println(l.getYearRangeReferencePaper()); // 109
     System.out.print("Q6: ");
     Vector<String> result = l.getNumReferencePaper("D12", 2000, 2015);
     for (String s : result) {
