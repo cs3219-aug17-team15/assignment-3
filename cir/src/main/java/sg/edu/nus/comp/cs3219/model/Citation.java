@@ -42,6 +42,13 @@ public class Citation {
     return authors != null && authors.author != null;
   }
 
+  public boolean isAuthorEqualIgnoreCase(String name) {
+    if (authors == null || authors.author == null) {
+      return false;
+    }
+    return authors.author.stream().anyMatch(author -> author.compareToIgnoreCase(name) == 0);
+  }
+
   public boolean hasBookTitle() {
     return booktitle != null && !booktitle.isEmpty();
   }

@@ -2,6 +2,7 @@ package sg.edu.nus.comp.cs3219.logic;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -16,10 +17,17 @@ import sg.edu.nus.comp.cs3219.storage.Storage;
 public class logic {
   private Storage storage;
   private Parser parser;
+  private HashMap<String, String> altConferenceNames;
+
 
   public logic() {
     this.storage = new Storage();
     this.parser = new Parser();
+    this.altConferenceNames = new HashMap<>();
+    addAltConferenceName("EMNLP", "Empirical Methods on Natural Language Processing");
+    addAltConferenceName("CoNLL", "Conference on Natural Language Learning");
+    addAltConferenceName("NAACL",
+        "North American Chapter of the Association for Computational Linguistics");
   }
 
   // Q1: How many documents are there in all datasets put together?
@@ -29,17 +37,7 @@ public class logic {
 
   // Q2: How many citations are there in all datasets put together?
   public int getNumReferencePaper() {
-    File baseDir = storage.getAssetBaseDir();
-    int count = 0;
-    for (File file : baseDir.listFiles()) {
-      // System.out.println(file.toString());
-      if (file.isDirectory()) {
-        count += getCitationsInDir(file).size();
-      } else {
-        count += getCitationInFile(file).size();
-      }
-    }
-    return count;
+    return getAllCitations().size();
   }
 
   // Q3: How many unique citations are there in all datasets put together?
@@ -67,7 +65,7 @@ public class logic {
   // Q6: For the conference D12 give number of cited documents published in each of the years 2000
   // to 2015.
   // Answer Format: <year> <integer>
-  public Vector<String> getNumReferencePaper(String conference, int from, int to) {
+  public Vector<String> getNumReferencePaperMultiYear(String conference, int from, int to) {
     Vector<String> result = new Vector<String>();
     File conferenceDir = storage.getConferenceDir(conference);
     List<Citation> citations = getCitationsInDir(conferenceDir);
@@ -77,25 +75,33 @@ public class logic {
     return result;
   }
 
-  public int getNumReferencePaper(String conference, int year) {
-    File dir = storage.getConferenceWithYearDir(conference, year);
-    return 0;
-  }
-
   // Q7: Repeat the above step for conferences ‘EMNLP’ and ‘CoNLL’ (instead of years) for the
   // con-ference D13.
   // Answer Format: <conference> <integer>
-  public Vector<String> getNumReferencePaper(String conference,
+  public Vector<String> getNumReferencePaperMultiReference(String conference,
       Vector<String> referencingConference) {
     Vector<String> result = new Vector<String>();
+    File conferenceDir = storage.getConferenceDir(conference);
+    List<Citation> citations = getCitationsInDir(conferenceDir);
     for (String s : referencingConference) {
-      result.add(s + " " + getNumReferencePaper(conference, s));
+      result.add(s + " " + getNumReferencePaper(citations, s));
     }
     return result;
   }
 
   public int getNumReferencePaper(String conference, String referencingConference) {
-    return 0;
+    File conferenceDir = storage.getConferenceDir(conference);
+    List<Citation> citations = getCitationsInDir(conferenceDir);
+    return getNumReferencePaper(citations, referencingConference);
+  }
+
+  private int getNumReferencePaper(List<Citation> citations, String referencingConference) {
+    List<Citation> result = getCitationEqualBookTitle(citations, referencingConference);
+    if (isAltConferenceNameKnow(referencingConference)) {
+      result.addAll(
+          getCitationEqualBookTitle(citations, getAltConferenceName(referencingConference)));
+    }
+    return result.size();
   }
 
   // Q8: For an author ‘Yoshua Bengio’ (also check for Y. Bengio) the number of times he is cited
@@ -125,16 +131,22 @@ public class logic {
       name += s[i].charAt(0) + ". ";
     }
     name += s[s.length - 1];
-    return 0;
+
+    File conferenceDir = storage.getConferenceDir(conference);
+    List<Citation> citations = getCitationsInDir(conferenceDir);
+    List<Citation> results = getCitationEqualAuthor(citations, author);
+    results.addAll(getCitationEqualAuthor(citations, name));
+    return getCitationEqualDate(results, year).size();
   }
 
   // Q9: For the conference J14,W14 find number of cited documents published in each of the years
   // from 2010 to 2015.
   // Answer Format: <conference> <year> <integer>
-  public Vector<String> getNumReferencePaper(Vector<String> conference, int from, int to) {
+  public Vector<String> getNumReferencePaperMultiConferenceWithYear(Vector<String> conference,
+      int from, int to) {
     Vector<String> result = new Vector<String>();
     for (String s1 : conference) {
-      for (String s2 : getNumReferencePaper(s1, from, to)) {
+      for (String s2 : getNumReferencePaperMultiYear(s1, from, to)) {
         result.add(s1 + " " + s2);
       }
     }
@@ -143,7 +155,7 @@ public class logic {
 
   // Q10: Repeat the above step for conference ‘NAACL’ for conference Q14,D14
   // Answer Format: <conference> <integer>
-  public Vector<String> getNumReferencePaper(Vector<String> conference,
+  public Vector<String> getNumReferencePaperMultiConference(Vector<String> conference,
       String referencingConference) {
     Vector<String> result = new Vector<String>();
     for (String s : conference) {
@@ -152,16 +164,49 @@ public class logic {
     return result;
   }
 
-  //  Helpers
+  // Helpers
+  public String getAltConferenceName(String conference) {
+    return altConferenceNames.get(conference.toUpperCase());
+  }
+
+  public boolean isAltConferenceNameKnow(String conference) {
+    return altConferenceNames.containsKey(conference.toUpperCase());
+  }
+
+  public void addAltConferenceName(String conf, String alt) {
+    altConferenceNames.put(conf.toUpperCase(), alt.toUpperCase());
+    altConferenceNames.put(alt.toUpperCase(), conf.toUpperCase());
+  }
+
   private List<Citation> filterCitationsWithDate(List<Citation> citations) {
     return citations.stream().filter(cit -> cit.hasDate()).collect(Collectors.toList());
   }
 
-  private List<Citation> getCitationEqualDate(List<Citation> citations, int date) {
-    return filterCitationsWithDate(citations).stream().filter(cit -> cit.getDate() == date).collect(Collectors.toList());
+  public List<Citation> getCitationEqualDate(List<Citation> citations, int date) {
+    return filterCitationsWithDate(citations).stream().filter(cit -> cit.getDate() == date)
+        .collect(Collectors.toList());
   }
 
-  //  File getters
+  private List<Citation> filterCitationsWithBookTitle(List<Citation> citations) {
+    return citations.stream().filter(cit -> cit.hasBookTitle()).collect(Collectors.toList());
+  }
+
+  public List<Citation> getCitationEqualBookTitle(List<Citation> citations, String bookTitle) {
+    return filterCitationsWithBookTitle(citations).stream()
+        .filter(cit -> cit.getBooktitle().toUpperCase().contains(bookTitle.toUpperCase()))
+        .collect(Collectors.toList());
+  }
+
+  private List<Citation> filterCitationsWithAuthor(List<Citation> citations) {
+    return citations.stream().filter(cit -> cit.hasAuthors()).collect(Collectors.toList());
+  }
+
+  public List<Citation> getCitationEqualAuthor(List<Citation> citations, String name) {
+    return filterCitationsWithAuthor(citations).stream()
+        .filter(cit -> cit.isAuthorEqualIgnoreCase(name)).collect(Collectors.toList());
+  }
+
+  // File getters
   private List<Citation> getAllCitations() {
     List<Citation> citations = new ArrayList<Citation>();
     for (File file : storage.getAssetBaseDir().listFiles()) {

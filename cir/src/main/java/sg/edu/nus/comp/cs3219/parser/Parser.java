@@ -11,7 +11,6 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
@@ -61,14 +60,14 @@ public class Parser {
           break;
       };
     } catch (IOException e) {
-      System.err.println("IO error on probing content type of file at: " + filePath);
+//      System.err.println("IO error on probing content type of file at: " + filePath);
       e.printStackTrace();
     } catch (IllegalArgumentException e) {
-      System.err.println("IllegalArgumentException at :" + filePath);
+//      System.err.println("IllegalArgumentException at :" + filePath);
       // System.err.println(e.getLocalizedMessage());
       return null;
     } catch (Exception e) {
-      System.err.println("Error occurred at: " + filePath);
+//      System.err.println("Error occurred at: " + filePath);
       // e.printStackTrace();
     }
     return null;
